@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Valentinovo 💘</title>
+
+<style>
+:root{
+  --bg:#fff5f7;
+  --card:#ffffff;
+  --text:#111827;
+  --yes:#22c55e;
+  --no:#ef4444;
+  --ring-track:#e5e7eb;
+  --ring:#22c55e;
+}
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  background: radial-gradient(circle at top, #ffe4e6, var(--bg));
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  padding:24px;
+  overflow-x:hidden;
+}
+
+.card{
+  width:min(560px,100%);
+  background:var(--card);
+  border-radius:24px;
+  padding:28px 22px 30px;
+  box-shadow:0 20px 45px rgba(0,0,0,.10);
+  text-align:center;
+}
+
+.sticker{font-size:60px;margin-bottom:6px;}
+h1{margin:10px 0 16px;font-size:clamp(22px,4vw,32px);}
+
+.btns{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+
+button{
+  border:0;
+  cursor:pointer;
+  font-weight:900;
+  padding:14px 22px;
+  border-radius:16px;
+  color:white;
+  font-size:18px;
+  min-width:140px;
+  box-shadow:0 10px 22px rgba(0,0,0,.12);
+}
+#yesBtn{background:var(--yes);}
+#noBtn{background:var(--no);}
+button:disabled{opacity:.5;cursor:not-allowed}
+
+/* TIMER */
+.timerWrap{display:none;justify-content:center;margin:8px 0;}
+.timerWrap.show{display:flex;}
+.ring{width:96px;height:96px;position:relative;display:grid;place-items:center;}
+.ring svg{width:96px;height:96px;transform:rotate(-90deg);}
+.ring .num{position:absolute;font-weight:900;font-size:26px;}
+.ring .label{position:absolute;bottom:12px;font-size:11px;font-weight:700;opacity:.7}
+
+/* REVEAL */
+#revealView{
+  position:fixed;
+  inset:0;
+  display:none;
+  place-items:center;
+  background: radial-gradient(circle at top,#ffe4e6,#fff);
+  padding:22px;
+  text-align:center;
+  overflow:hidden;
+}
+#revealView.show{display:grid;}
+
+#heartsCanvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  z-index:1;
+}
+#revealContent{position:relative;z-index:2;width:min(900px,100%);}
+
+.headline{font-size:clamp(34px,6vw,60px);font-weight:1000;margin:0 0 10px;}
+.sub{font-weight:800;margin-bottom:18px;}
+
+.gallery{
+  display:grid;
+  gap:12px;
+  grid-template-columns:repeat(3,1fr);
+}
+.gallery img{
+  width:100%;
+  height:220px;
+  object-fit:cover;
+  border-radius:18px;
+  box-shadow:0 14px 30px rgba(0,0,0,.1);
+}
+
+@media(max-width:720px){
+  .gallery{grid-template-columns:1fr;}
+}
+</style>
+</head>
+
+<body>
+
+<div id="questionView" class="card">
+  <div class="sticker">❤️</div>
+
+  <div class="timerWrap" id="timerWrap">
+    <div class="ring">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="48" fill="none"
+                stroke="var(--ring-track)" stroke-width="10"/>
+        <circle id="ringProgress"
+                cx="60" cy="60" r="48"
+                fill="none"
+                stroke="var(--ring)"
+                stroke-width="10"
+                stroke-linecap="round"
+                stroke-dasharray="301.59"
+                stroke-dashoffset="0"/>
+      </svg>
+      <div class="num" id="timerNum">30</div>
+      <div class="label">sek</div>
+    </div>
+  </div>
+
+  <h1 id="questionTitle">Želiš li biti moj Valentin? ❣️ </h1>
+
+  <div class="btns" id="btnsRow">
+    <button id="yesBtn">Da</button>
+  </div>
+</div>
+
+
+<div id="revealView">
+  <canvas id="heartsCanvas"></canvas>
+  <div id="revealContent">
+    <h2 class="headline">Idemo u Ljubljanu! 💚</h2>
+    <p class="sub">Romantični vikend uz Ljubljanicu 🥰</p>
+
+    <div class="gallery">
+      <img src="C:\Users\josip\Desktop\Ljubljana\Apartman.png">
+      <img src="C:\Users\josip\Desktop\Ljubljana\Kika.png">
+      <img src="C:\Users\josip\Desktop\Ljubljana\Ljubljana.avif">
+    </div>
+  </div>
+</div>
+
+<script>
+const yesBtn = document.getElementById("yesBtn");
+const questionTitle = document.getElementById("questionTitle");
+const btnsRow = document.getElementById("btnsRow");
+const timerWrap = document.getElementById("timerWrap");
+const timerNum = document.getElementById("timerNum");
+const ring = document.getElementById("ringProgress");
+const revealView = document.getElementById("revealView");
+const questionView = document.getElementById("questionView");
+
+let step = 1;
+let timerInterval = null;
+const FULL = 30;
+const CIRC = 2*Math.PI*48;
+
+function startTimer(){
+  timerWrap.classList.add("show");
+  yesBtn.disabled = true;
+  document.getElementById("noBtn").disabled = true;
+  questionTitle.textContent="Nisi ti baš toliko nestrpljiva 😏";
+
+  let start = Date.now();
+  timerInterval = setInterval(()=>{
+    let elapsed=(Date.now()-start)/1000;
+    let remaining=Math.max(0,Math.ceil(FULL-elapsed));
+    timerNum.textContent=remaining;
+    ring.style.strokeDashoffset=CIRC*(elapsed/FULL);
+
+    if(elapsed>=FULL){
+      clearInterval(timerInterval);
+      timerWrap.classList.remove("show");
+      yesBtn.disabled=false;
+      document.getElementById("noBtn").disabled=false;
+      questionTitle.textContent="Jesi li spremna da saznaš planove? 😏";
+    }
+  },100);
+}
+
+yesBtn.addEventListener("click",()=>{
+  if(step===1){
+    step=2;
+    questionTitle.textContent="Jesi li spremna da saznaš planove? 😏";
+    btnsRow.innerHTML=`
+      <button id="yesBtn">Da</button>
+      <button id="noBtn">Ne</button>
+    `;
+    document.getElementById("yesBtn").addEventListener("click",()=>showReveal());
+    document.getElementById("noBtn").addEventListener("click",startTimer);
+  }
+});
+
+function showReveal(){
+  questionView.style.display="none";
+  revealView.classList.add("show");
+  startHearts();
+}
+
+/* HEARTS */
+const canvas=document.getElementById("heartsCanvas");
+const ctx=canvas.getContext("2d");
+let hearts=[];
+
+function resize(){
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+}
+window.addEventListener("resize",resize);
+
+function startHearts(){
+  resize();
+  hearts=[];
+  for(let i=0;i<120;i++){
+    hearts.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*-canvas.height,
+      vy:2+Math.random()*3,
+      size:20+Math.random()*25
+    });
+  }
+  requestAnimationFrame(update);
+}
+
+function update(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  hearts.forEach(h=>{
+    h.y+=h.vy;
+    if(h.y>canvas.height)h.y=-20;
+    ctx.font=`${h.size}px serif`;
+    ctx.fillText("❤️",h.x,h.y);
+  });
+  requestAnimationFrame(update);
+}
+</script>
+</body>
+</html>
